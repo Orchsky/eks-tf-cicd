@@ -1,6 +1,5 @@
 name: eks-cluster-terraform
 
-
 on:
   push:
     branches:

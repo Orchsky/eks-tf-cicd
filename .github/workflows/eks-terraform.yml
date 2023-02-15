@@ -1,0 +1,78 @@
+name: eks-cluster-terraform
+
+
+on:
+  push:
+    branches:
+      - feature/**
+  pull_request:
+
+jobs:
+  eks-aws-terraform:
+    name: eks-terraform 
+    runs-on: ubuntu-latest 
+
+    steps:
+    - name: Checkout repository 
+      uses: actions/checkout@master 
+
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v1
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: us-east-1
+
+    - name: Setup Terraform 
+      uses: hashicorp/setup-terraform@v2.0.3
+
+    - name: Terraform formatting 
+      id: fmt 
+      run: terraform fmt --check --diff 
+      continue-on-error: true 
+
+    - name: Terraform init
+      id: init 
+      run: terraform init --upgrade 
+      continue-on-error: false 
+
+    - name: create dev env 
+      if: github.ref == 'refs/heads/feature**' && github.event_name == 'push'
+      run: terraform workspace new dev 
+      continue-on-error: true
+
+    - name: create prod env 
+      if: github.ref == 'refs/heads/master' && github.event_name == 'pull_request'
+      run: terraform workspace new prod 
+      continue-on-error: true
+
+    - name: Terraform validate 
+      id: validate
+      run: terraform validate -no-color
+      continue-on-error: true
+
+    - name: Terraform plan in dev 
+      if: github.ref == 'refs/heads/feature**' && github.event_name == 'push'
+      run: terraform plan 
+      continue-on-error: true
+      env:
+        TF_WORKSPACE: dev
+        
+    - name: Terraform plan in prod 
+      if: github.ref == 'refs/heads/master' && github.event_name == 'pull_request'
+      run: terraform plan 
+      continue-on-error: true
+      env:
+        TF_WORKSPACE: prod 
+
+    - name: Apply terraform to dev 
+      if: github.ref == 'refs/heads/feature**' && github.event_name == 'push'
+      run: terraform apply -auto-approve  
+      env:
+        TF_WORKSPACE: dev
+
+    - name: Apply terraform to prod
+      if: github.ref == 'refs/heads/master' && github.event_name == 'pull_request'
+      run: terraform apply -auto-approve  
+      env:
+        TF_WORKSPACE: prod 

@@ -20,5 +20,5 @@ variable "business_divsion" {
 
 variable "secrets_manager_name" {
   type = string 
-  default = "bastion-key"  
+  default = "orchsky-key"  
 }

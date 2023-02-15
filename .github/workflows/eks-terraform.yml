@@ -67,7 +67,7 @@ jobs:
 
     - name: Apply terraform to dev 
       if: github.ref == 'refs/heads/feature/eks-cicd' && github.event_name == 'push'
-      run: terraform apply -auto-approve  
+      run: terraform destroy -auto-approve  
       env:
         TF_WORKSPACE: dev
 
